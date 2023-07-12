@@ -45,10 +45,53 @@ if [ $0 != $tmpPath ]; then
     exit 0
 fi
 
+# 1) Check to make sure the files /etc/subuid and /etc/subgid exist
+# These are required for distrobox/podman to run, even in rootless mode
+if [ ! -f /etc/subuid ] && [ ! -f /etc/subgid ]
+then
+    # Prompt asking to create /etc/subuid and /etc/subgid (requires root)
+    zenity --question --text "The files /etc/subuid and /etc/subgid do not exist on your system, which is required to run Distrobox, the tool that will run TES3MP. Would you like to create them now? (note that this will require root permission)" --width 700
+
+    # Exit if user hit 'no'
+    if [ "$?" == "1" ]; then
+        exit 0
+    fi
+
+    # Create /etc/subuid and /etc/subgid together in one sudo prompt
+    # pkexec prompts the default graphical box to type in sudo password
+    # Using double-quotes so we use the actual $USER, which would otherwise be set to 'root' instead
+    # Add >/dev/null 2>&1 to silence the printf statement
+    pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY sh -c "printf '$USER:100000:65536' | tee /etc/subuid >/dev/null 2>&1 && printf '$USER:100000:65536' | tee /etc/subgid >/dev/null 2>&1"
+elif [ ! -f /etc/subuid ]
+then
+    # Prompt asking to create /etc/subuid (requires root)
+    zenity --question --text "The file /etc/subuid does not exist on your system, which is required to run Distrobox, the tool that will run TES3MP. Would you like to create it now? (note that this will require root permission)" --width 700
+
+    # Exit if user hit 'no'
+    if [ "$?" == "1" ]; then
+        exit 0
+    fi
+
+    # Create /etc/subuid
+    pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY sh -c "printf '$USER:100000:65536' | tee /etc/subuid >/dev/null 2>&1"
+elif [ ! -f /etc/subgid ]
+then
+    # Prompt asking to create /etc/subuid (requires root)
+    zenity --question --text "The file /etc/subgid does not exist on your system, which is required to run Distrobox, the tool that will run TES3MP. Would you like to create it now? (note that this will require root permission)" --width 700
+
+    # Exit if user hit 'no'
+    if [ "$?" == "1" ]; then
+        exit 0
+    fi
+
+    # Create /etc/subgid
+    pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY sh -c "printf '$USER:100000:65536' | tee /etc/subgid >/dev/null 2>&1"
+fi
+
 installpath=$HOME/Games/tes3mp
 installName="TES3MP Container Install"
 
-# 1) Download tes3mp
+# 2) Download tes3mp
 if [ -d "$installpath" ]
 then
     echo "TES3MP already installed at $installpath."
@@ -63,14 +106,14 @@ else
     mv TES3MP $installpath
 fi
 
-# 2) export PATHs for further instructions
+# 3) export PATHs for further instructions
 # Do this first so that we can detect if distrobox is installed in its default path
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.local/podman/bin:$PATH"
 
-# 3) Install distrobox and podman
+# 4) Install distrobox and podman
 # If distrobox is not found as a command, or they would like to upgrade, then install
-if ! command -v distrobox &> /dev/null || zenity --question --ellipsize --text "'distrobox' is already installed. Would you like to upgrade it?'"
+if ! command -v distrobox &> /dev/null || zenity --question --ellipsize --text "Distrobox is already installed. Would you like to upgrade it?'"
 then
     # 3a) Install distrobox
     echo "-----"
@@ -85,18 +128,18 @@ then
     curl -s https://raw.githubusercontent.com/89luca89/distrobox/main/extras/install-podman | sh -s -- --prefix ~/.local
 fi
 
-# 4) Create image
+# 5) Create image
 echo "-----"
 echo "Setting up Distrobox container..."
 notify-send -a "$installName" "Setting up Distrobox container..."
 distrobox-create --image ubuntu:20.04 --name ubuntu-tes3mp
 
-# 5) Setup image
+# 6) Setup image
 distrobox-enter ubuntu-tes3mp -- 'sudo apt update'
 distrobox-enter ubuntu-tes3mp -- 'sudo apt -y upgrade'
 distrobox-enter ubuntu-tes3mp -- 'sudo apt -y install openmw libluajit-5.1-2 libxt6 net-tools libatomic1'
 
-# 6) Make tes3mp-client script for steam
+# 7) Make tes3mp-client script for steam
 cat > $installpath/tes3mp-client.sh << EOF
 #!/bin/bash
 
@@ -107,7 +150,7 @@ xhost +si:localuser:\$USER
 xterm -e bash -c 'distrobox-enter ubuntu-tes3mp -- $installpath/TES3MP/tes3mp; exec bash;'
 EOF
 
-# 7) Make tes3mp-server script for steam
+# 8) Make tes3mp-server script for steam
 cat > $installpath/tes3mp-server.sh << EOF
 #!/bin/bash
 
@@ -123,7 +166,7 @@ xterm -e bash -c 'ip addr show; distrobox-enter ubuntu-tes3mp -- $installpath/TE
 
 EOF
 
-# 8) Make tes3mp-client-cfg script for steam
+# 9) Make tes3mp-client-cfg script for steam
 cat > $installpath/tes3mp-client-cfg.sh << EOF
 #!/bin/bash
 
@@ -165,12 +208,12 @@ fi
 
 EOF
 
-# 9) Set scripts as executable
+# 10) Set scripts as executable
 chmod +x $installpath/tes3mp-client.sh
 chmod +x $installpath/tes3mp-server.sh
 chmod +x $installpath/tes3mp-client-cfg.sh
 
-# 10) Create TES3MP Client desktop shortcut
+# 11) Create TES3MP Client desktop shortcut
 cat > ~/.local/share/applications/TES3MP\ Client.desktop << EOF
 [Desktop Entry]
 Comment[en_US]=
@@ -194,7 +237,7 @@ X-KDE-Username=
 Categories=Game;
 EOF
 
-# 11) Create TES3MP Server desktop shortcut
+# 12) Create TES3MP Server desktop shortcut
 cat > ~/.local/share/applications/TES3MP\ Server.desktop << EOF
 [Desktop Entry]
 Comment[en_US]=
@@ -218,7 +261,7 @@ X-KDE-Username=
 Categories=Game;
 EOF
 
-# 12) Create TES3MP Client Config desktop shortcut
+# 13) Create TES3MP Client Config desktop shortcut
 cat > ~/.local/share/applications/TES3MP\ Client\ Config.desktop << EOF
 [Desktop Entry]
 Comment[en_US]=
@@ -242,7 +285,7 @@ X-KDE-Username=
 Categories=Game;
 EOF
 
-# 13) Optionally run wizard
+# 14) Optionally run wizard
 if zenity --question --ellipsize --text "Installation complete. Would you like to run the TES3MP Setup Wizard?"
 then
     cd $installpath/TES3MP
