@@ -13,7 +13,7 @@ TES3MP is a project that brings a multiplayer co-op experience for Morrowind. Si
 - Can also be rerun multiple times to upgrade your Distrobox software as well as your container's packages.
 
 # Why write an install script?
-*tl;dr* it is a pain to set up and get running in SteamOS's Game Mode, and would take too long manually doing it for a friend.
+*tl;dr* it is a pain to set up and get running in SteamOS's Game Mode, and would take too long manually doing it for a friend. Making a Flatpak/AppImage distribution of the software would also be ideal, but that would take even more effort to get working, probably especially with the server integration.
 
 Essentially, TES3MP is distributed as a portable zip/tar.gz, and in order to run the server and client, it requires some software libraries that SteamOS doesn't come bundled with. I've seen other people create guides for getting TES3MP set up on the Steam Deck, but they rely on having to unlock the read-only file system on the OS to install these libraries through Arch Linux's package manager called 'pacman', which gets wiped on the next SteamOS update. Annoying, and not clean nor in the spirit of "immutable distro" philosophy. Additionally, it can be tricky trying to run both the TES3MP server and the client in SteamOS's Game Mode.
 
