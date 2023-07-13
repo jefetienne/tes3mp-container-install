@@ -147,7 +147,7 @@ unset LD_PRELOAD
 export PATH=\$HOME/.local/bin:\$HOME/.local/podman/bin:\$PATH
 xhost +si:localuser:\$USER
 
-xterm -e bash -c 'distrobox-enter ubuntu-tes3mp -- $installpath/TES3MP/tes3mp; exec bash;'
+xterm -e bash -c 'distrobox-enter ubuntu-tes3mp -- $installpath/TES3MP/tes3mp'
 EOF
 
 # 8) Make tes3mp-server script for steam
