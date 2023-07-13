@@ -1,7 +1,7 @@
 # TES3MP Container Install Script
 An install script to play multiplayer Morrowind ([TES3MP](https://github.com/TES3MP/TES3MP)) painlessly on the Steam Deck and other immutable distros.
 
-TES3MP is a project that brings a multiplayer co-op experience for Morrowind. Simply download the tes3mp-container-install.sh file and double-click to run it.
+TES3MP is a project that brings a multiplayer co-op experience for Morrowind. Simply download the tes3mp-container-install.sh file and double-click to run it. Recommended to have Morrowind installed first prior to running the script so that Morrowind.esm can be selected in the TES3MP Setup Wizard.
 
 # Features
 - Downloads and installs TES3MP, along with rootless [Distrobox+Podman](https://github.com/89luca89/distrobox) to run TES3MP through it. **Note** that you may need root permission to get two system files (`/etc/subuid` and `/etc/subgid`) created for Distrobox if they do not exist already.
