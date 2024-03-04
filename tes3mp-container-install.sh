@@ -90,6 +90,8 @@ fi
 
 installpath=$HOME/Games/tes3mp
 installName="TES3MP Container Install"
+distroboxDir=$HOME/.local/bin
+containerName="ubuntu-tes3mp-22-04"
 
 # 2) Download tes3mp
 if [ -d "$installpath" ]
@@ -106,14 +108,15 @@ else
     mv TES3MP $installpath
 fi
 
+mkdir -p $distroboxDir
+
 # 3) export PATHs for further instructions
 # Do this first so that we can detect if distrobox is installed in its default path
-export PATH="$HOME/.local/bin:$PATH"
-export PATH="$HOME/.local/podman/bin:$PATH"
+export PATH="$distroboxDir:$PATH"
 
 # 4) Install distrobox and podman
 # If distrobox is not found as a command, or they would like to upgrade, then install
-if ! command -v distrobox &> /dev/null || zenity --question --ellipsize --text "Distrobox is already installed. Would you like to upgrade it?'"
+if ! command -v distrobox &> /dev/null || zenity --question --ellipsize --text "Distrobox is already installed. Would you like to upgrade it?"
 then
     # 3a) Install distrobox
     echo "-----"
@@ -125,29 +128,31 @@ then
     echo "-----"
     echo "Installing latest version of Podman..."
     notify-send -a "$installName" "Installing latest version of Podman..."
-    curl -s https://raw.githubusercontent.com/89luca89/distrobox/main/extras/install-podman | sh -s -- --prefix ~/.local
+    curl -L https://github.com/89luca89/podman-launcher/releases/latest/download/podman-launcher-amd64 -o ~/.local/bin/podman
+
+    chmod +x ~/.local/bin/podman
 fi
 
 # 5) Create image
 echo "-----"
 echo "Setting up Distrobox container..."
 notify-send -a "$installName" "Setting up Distrobox container..."
-distrobox-create --image ubuntu:20.04 --name ubuntu-tes3mp
+$distroboxDir/distrobox-create --image ubuntu:22.04 --name $containerName --yes
 
 # 6) Setup image
-distrobox-enter ubuntu-tes3mp -- 'sudo apt update'
-distrobox-enter ubuntu-tes3mp -- 'sudo apt -y upgrade'
-distrobox-enter ubuntu-tes3mp -- 'sudo apt -y install openmw libluajit-5.1-2 libxt6 net-tools libatomic1'
+$distroboxDir/distrobox-enter $containerName -- 'sudo apt update'
+$distroboxDir/distrobox-enter $containerName -- 'sudo apt -y upgrade'
+$distroboxDir/distrobox-enter $containerName -- 'sudo apt -y install openmw libluajit-5.1-2 libxt6 net-tools libatomic1 libwavpack1'
 
 # 7) Make tes3mp-client script for steam
 cat > $installpath/tes3mp-client.sh << EOF
 #!/bin/bash
 
 unset LD_PRELOAD
-export PATH=\$HOME/.local/bin:\$HOME/.local/podman/bin:\$PATH
+export PATH=$distroboxDir:\$PATH
 xhost +si:localuser:\$USER
 
-xterm -e bash -c 'distrobox-enter ubuntu-tes3mp -- $installpath/TES3MP/tes3mp'
+xterm -e bash -c '$distroboxDir/distrobox-enter $containerName -- $installpath/TES3MP/tes3mp'
 EOF
 
 # 8) Make tes3mp-server script for steam
@@ -155,14 +160,14 @@ cat > $installpath/tes3mp-server.sh << EOF
 #!/bin/bash
 
 unset LD_PRELOAD
-export PATH=\$HOME/.local/bin:\$HOME/.local/podman/bin:\$PATH
+export PATH=$distroboxDir:\$PATH
 xhost +si:localuser:\$USER
 
 ips=\$(ip addr show | grep -oE "\\b((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b")
 
 zenity --info --text "TES3MP server will be hosted on one of the IP addresses:\\n\$ips"
 
-xterm -e bash -c 'ip addr show; distrobox-enter ubuntu-tes3mp -- $installpath/TES3MP/tes3mp-server; exec bash'
+xterm -e bash -c 'ip addr show; $distroboxDir/distrobox-enter $containerName -- $installpath/TES3MP/tes3mp-server; exec bash'
 
 EOF
 
