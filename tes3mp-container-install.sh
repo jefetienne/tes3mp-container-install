@@ -110,27 +110,35 @@ fi
 
 mkdir -p $distroboxDir
 
-# 3) export PATHs for further instructions
-# Do this first so that we can detect if distrobox is installed in its default path
-export PATH="$distroboxDir:$PATH"
-
 # 4) Install distrobox and podman
-# If distrobox is not found as a command, or they would like to upgrade, then install
-if ! command -v distrobox &> /dev/null || zenity --question --ellipsize --text "Distrobox is already installed. Would you like to upgrade it?"
+
+# If distrobox is installed in root directory (e.g. SteamOS 3.5+) then use that directly instead of installing rootless
+if [[ $(command -v distrobox) != $HOME* ]]
 then
-    # 3a) Install distrobox
     echo "-----"
-    echo "Installing latest version of Distrobox..."
-    notify-send -a "$installName" "Installing latest version of Distrobox..."
-    wget -qO- https://raw.githubusercontent.com/89luca89/distrobox/main/install | sh -s -- --prefix ~/.local
+    echo "Distrobox is already installed in root directory, skipping rootless installation."
+    distroboxDir=$(command -v distrobox | rev | cut -d/ -f2- | rev)
+else
+    # Do this first so that we can detect if distrobox is installed in its default path
+    export PATH="$distroboxDir:$PATH"
 
-    # 3b) Install podman
-    echo "-----"
-    echo "Installing latest version of Podman..."
-    notify-send -a "$installName" "Installing latest version of Podman..."
-    curl -L https://github.com/89luca89/podman-launcher/releases/latest/download/podman-launcher-amd64 -o ~/.local/bin/podman
+    # If distrobox is not found as a command, or it is installed rootless and they would like to upgrade, then install
+    if ! command -v distrobox &> /dev/null || zenity --question --ellipsize --text "Distrobox is already installed. Would you like to upgrade it?"
+    then
+        # 3a) Install distrobox
+        echo "-----"
+        echo "Installing latest version of Distrobox..."
+        notify-send -a "$installName" "Installing latest version of Distrobox..."
+        wget -qO- https://raw.githubusercontent.com/89luca89/distrobox/main/install | sh -s -- --prefix ~/.local
 
-    chmod +x ~/.local/bin/podman
+        # 3b) Install podman
+        echo "-----"
+        echo "Installing latest version of Podman..."
+        notify-send -a "$installName" "Installing latest version of Podman..."
+        curl -L https://github.com/89luca89/podman-launcher/releases/latest/download/podman-launcher-amd64 -o ~/.local/bin/podman
+
+        chmod +x ~/.local/bin/podman
+    fi
 fi
 
 # 5) Create image
